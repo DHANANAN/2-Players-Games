@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DJ's Games Hub — DJLexFolio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Rajdhani:wght@300;400;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet" />
+  <style>
+    /* ─── CSS VARIABLES ─────────────────────────────────── */
+    :root {
+      --bg:        #04040d;
+      --bg2:       #080818;
+      --cyan:      #00f5ff;
+      --magenta:   #ff00aa;
+      --gold:      #ffd700;
+      --green:     #00ff88;
+      --panel:     rgba(0,245,255,0.04);
+      --border:    rgba(0,245,255,0.18);
+      --text:      #c8d8ff;
+      --dim:       #5a6a8a;
+      --glow-c:    0 0 20px rgba(0,245,255,0.6), 0 0 60px rgba(0,245,255,0.2);
+      --glow-m:    0 0 20px rgba(255,0,170,0.6), 0 0 60px rgba(255,0,170,0.2);
+    }
+
+    /* ─── RESET & BASE ──────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Rajdhani', sans-serif;
+      font-weight: 400;
+      overflow-x: hidden;
+      cursor: crosshair;
+    }
+
+    /* ─── SCANLINE OVERLAY ──────────────────────────────── */
+    body::before {
+      content: '';
+      position: fixed; inset: 0; z-index: 9999;
+      background: repeating-linear-gradient(
+        0deg, transparent, transparent 2px,
+        rgba(0,0,0,0.08) 2px, rgba(0,0,0,0.08) 4px
+      );
+      pointer-events: none;
+    }
+
+    /* ─── STARFIELD CANVAS ──────────────────────────────── */
+    #starfield {
+      position: fixed; inset: 0; z-index: 0;
+      pointer-events: none;
+    }
+
+    /* ─── NOISE TEXTURE ─────────────────────────────────── */
+    body::after {
+      content: '';
+      position: fixed; inset: 0; z-index: 1;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+      pointer-events: none; opacity: 0.4;
+    }
+
+    /* ─── WRAPPER ───────────────────────────────────────── */
+    .wrap { position: relative; z-index: 2; max-width: 1300px; margin: 0 auto; padding: 0 2rem; }
+
+    /* ─── HEADER / HERO ─────────────────────────────────── */
+    header {
+      position: relative;
+      padding: 4rem 0 3rem;
+      text-align: center;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .back-link {
+      position: absolute; top: 2rem; left: 2rem;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.65rem; font-weight: 700;
+      color: var(--dim); text-decoration: none;
+      letter-spacing: 0.12em;
+      border: 1px solid var(--dim);
+      padding: 0.5rem 1rem;
+      transition: all 0.3s;
+    }
+    .back-link:hover { color: var(--cyan); border-color: var(--cyan); box-shadow: var(--glow-c); }
+
+    .tagline {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.65rem;
+      letter-spacing: 0.3em;
+      color: var(--magenta);
+      text-transform: uppercase;
+      margin-bottom: 1.2rem;
+      animation: fadeUp 0.6s ease both;
+    }
+
+    h1 {
+      font-family: 'Press Start 2P', monospace;
+      font-size: clamp(1.4rem, 5vw, 3.2rem);
+      line-height: 1.4;
+      color: #fff;
+      text-shadow: var(--glow-c);
+      animation: fadeUp 0.7s 0.1s ease both;
+    }
+    h1 span { color: var(--cyan); }
+
+    .hero-sub {
+      font-size: 1.1rem; font-weight: 300;
+      color: var(--dim); margin-top: 1.2rem;
+      letter-spacing: 0.05em;
+      animation: fadeUp 0.7s 0.2s ease both;
+    }
+
+    /* animated underline bar */
+    .hero-bar {
+      width: 120px; height: 2px;
+      margin: 1.8rem auto 0;
+      background: linear-gradient(90deg, var(--magenta), var(--cyan));
+      box-shadow: 0 0 12px var(--cyan);
+      animation: expand 0.8s 0.4s ease both;
+    }
+
+    /* ─── STATS ROW ─────────────────────────────────────── */
+    .stats {
+      display: flex; justify-content: center; gap: 3rem;
+      padding: 2rem 0; border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+    }
+    .stat { text-align: center; }
+    .stat-num {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 2rem; font-weight: 900;
+      color: var(--gold);
+      text-shadow: 0 0 20px rgba(255,215,0,0.5);
+    }
+    .stat-label {
+      font-size: 0.75rem; font-weight: 600;
+      color: var(--dim); letter-spacing: 0.15em;
+      text-transform: uppercase; margin-top: 0.25rem;
+    }
+
+    /* ─── SECTION HEADER ────────────────────────────────── */
+    .section-head {
+      display: flex; align-items: center; gap: 1rem;
+      padding: 3rem 0 2rem;
+    }
+    .section-head h2 {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.8rem; font-weight: 700;
+      letter-spacing: 0.25em; text-transform: uppercase;
+      color: var(--cyan);
+    }
+    .section-line {
+      flex: 1; height: 1px;
+      background: linear-gradient(90deg, var(--border), transparent);
+    }
+
+    /* ─── FILTER BAR ─────────────────────────────────────── */
+    .filter-bar {
+      display: flex; gap: 0.6rem; flex-wrap: wrap;
+      margin-bottom: 2.5rem;
+    }
+    .filter-btn {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.6rem; font-weight: 700;
+      letter-spacing: 0.15em; text-transform: uppercase;
+      padding: 0.5rem 1.2rem;
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--dim); cursor: pointer;
+      transition: all 0.25s;
+    }
+    .filter-btn:hover, .filter-btn.active {
+      color: var(--bg); background: var(--cyan);
+      border-color: var(--cyan); box-shadow: var(--glow-c);
+    }
+
+    /* ─── GAME GRID ──────────────────────────────────────── */
+    .game-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1.5rem;
+      padding-bottom: 4rem;
+    }
+
+    /* ─── GAME CARD ──────────────────────────────────────── */
+    .game-card {
+      position: relative;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      padding: 0;
+      overflow: hidden;
+      transition: transform 0.3s, box-shadow 0.3s;
+      cursor: pointer;
+      text-decoration: none;
+      display: block;
+      animation: fadeUp 0.5s ease both;
+    }
+    .game-card:nth-child(1)  { animation-delay: 0.05s; }
+    .game-card:nth-child(2)  { animation-delay: 0.10s; }
+    .game-card:nth-child(3)  { animation-delay: 0.15s; }
+    .game-card:nth-child(4)  { animation-delay: 0.20s; }
+    .game-card:nth-child(5)  { animation-delay: 0.25s; }
+    .game-card:nth-child(6)  { animation-delay: 0.30s; }
+    .game-card:nth-child(7)  { animation-delay: 0.35s; }
+    .game-card:nth-child(8)  { animation-delay: 0.40s; }
+    .game-card:nth-child(9)  { animation-delay: 0.45s; }
+    .game-card:nth-child(10) { animation-delay: 0.50s; }
+    .game-card:nth-child(11) { animation-delay: 0.55s; }
+
+    .game-card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 0 30px rgba(0,245,255,0.15), 0 0 0 1px var(--cyan);
+    }
+    .game-card:hover .card-glow { opacity: 1; }
+    .game-card:hover .play-btn  { opacity: 1; transform: translateY(0); }
+
+    /* corner bracket decoration */
+    .game-card::before, .game-card::after {
+      content: '';
+      position: absolute;
+      width: 14px; height: 14px;
+      border-color: var(--cyan);
+      border-style: solid;
+      transition: all 0.3s;
+      opacity: 0;
+      z-index: 3;
+    }
+    .game-card::before { top: 0; left: 0; border-width: 2px 0 0 2px; }
+    .game-card::after  { bottom: 0; right: 0; border-width: 0 2px 2px 0; }
+    .game-card:hover::before, .game-card:hover::after { opacity: 1; }
+
+    .card-glow {
+      position: absolute; inset: 0;
+      background: radial-gradient(circle at 50% 0%, rgba(0,245,255,0.08), transparent 70%);
+      opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 1;
+    }
+
+    /* emoji / icon area */
+    .card-icon {
+      position: relative; z-index: 2;
+      padding: 2rem 1.5rem 1rem;
+      font-size: 3rem;
+      line-height: 1;
+      filter: drop-shadow(0 0 12px rgba(0,245,255,0.4));
+      transition: transform 0.3s;
+    }
+    .game-card:hover .card-icon { transform: scale(1.15) rotate(-3deg); }
+
+    .card-body { position: relative; z-index: 2; padding: 0 1.5rem 1.5rem; }
+
+    .card-name {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.85rem; font-weight: 700;
+      letter-spacing: 0.1em; color: #fff;
+      margin-bottom: 0.4rem;
+    }
+
+    .card-desc {
+      font-size: 0.85rem; font-weight: 300;
+      color: var(--dim); line-height: 1.5;
+      margin-bottom: 1rem;
+    }
+
+    /* badge row */
+    .card-badges { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 1rem; }
+    .badge {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.5rem; font-weight: 700;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      padding: 0.2rem 0.6rem;
+      border: 1px solid;
+    }
+    .badge-2p   { border-color: var(--green);   color: var(--green); }
+    .badge-ai   { border-color: var(--magenta);  color: var(--magenta); }
+    .badge-new  { border-color: var(--gold);     color: var(--gold); }
+    .badge-turn { border-color: var(--cyan);     color: var(--cyan); }
+    .badge-rt   { border-color: #ff6600;         color: #ff6600; }
+
+    /* status dot */
+    .card-status {
+      position: absolute; top: 1rem; right: 1rem; z-index: 4;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.5rem; font-weight: 700;
+      letter-spacing: 0.1em;
+      padding: 0.25rem 0.6rem;
+      text-transform: uppercase;
+    }
+    .status-live { color: var(--green); border: 1px solid var(--green); background: rgba(0,255,136,0.08); }
+    .status-soon { color: var(--gold);  border: 1px solid var(--gold);  background: rgba(255,215,0,0.08); }
+
+    .play-btn {
+      display: inline-block;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.6rem; font-weight: 700;
+      letter-spacing: 0.2em; text-transform: uppercase;
+      padding: 0.6rem 1.4rem;
+      background: var(--cyan); color: var(--bg);
+      border: none; cursor: pointer;
+      opacity: 0; transform: translateY(6px);
+      transition: all 0.3s;
+      text-decoration: none;
+    }
+    .play-btn:hover { background: #fff; box-shadow: var(--glow-c); }
+
+    /* card accent bar */
+    .card-accent {
+      height: 2px;
+      background: linear-gradient(90deg, var(--magenta), var(--cyan));
+    }
+
+    /* ─── TOURNAMENT SECTION ─────────────────────────────── */
+    .tournament-panel {
+      border: 1px solid var(--border);
+      background: var(--panel);
+      padding: 2rem;
+      margin-bottom: 4rem;
+      position: relative;
+      overflow: hidden;
+    }
+    .tournament-panel::before {
+      content: 'TOURNAMENT MODE';
+      position: absolute; top: -1px; left: 2rem;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.55rem; font-weight: 700;
+      letter-spacing: 0.2em;
+      color: var(--bg);
+      background: var(--gold);
+      padding: 0.2rem 0.8rem;
+    }
+    .tournament-panel h3 {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1rem; color: var(--gold);
+      margin-bottom: 0.8rem;
+      margin-top: 0.5rem;
+    }
+    .tournament-panel p { font-size: 0.95rem; color: var(--dim); line-height: 1.7; }
+    .t-games { display: flex; gap: 0.6rem; flex-wrap: wrap; margin-top: 1.2rem; }
+    .t-game-chip {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.55rem; font-weight: 700;
+      padding: 0.4rem 0.9rem;
+      border: 1px solid var(--gold);
+      color: var(--gold);
+      letter-spacing: 0.1em;
+      background: rgba(255,215,0,0.06);
+    }
+    .launch-tourney {
+      display: inline-block; margin-top: 1.5rem;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.65rem; font-weight: 700;
+      letter-spacing: 0.2em; text-transform: uppercase;
+      padding: 0.8rem 2rem;
+      background: transparent; color: var(--gold);
+      border: 1px solid var(--gold);
+      cursor: pointer; transition: all 0.3s;
+    }
+    .launch-tourney:hover {
+      background: var(--gold); color: var(--bg);
+      box-shadow: 0 0 24px rgba(255,215,0,0.4);
+    }
+
+    /* ─── SCOREBOARD ─────────────────────────────────────── */
+    .score-panel {
+      border: 1px solid var(--border);
+      background: var(--panel);
+      padding: 2rem;
+      margin-bottom: 4rem;
+    }
+    .score-panel h3 {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.75rem; color: var(--cyan);
+      letter-spacing: 0.2em; text-transform: uppercase;
+      margin-bottom: 1.5rem;
+    }
+    .score-table { width: 100%; border-collapse: collapse; }
+    .score-table th {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.55rem; font-weight: 700;
+      letter-spacing: 0.15em; text-transform: uppercase;
+      color: var(--dim); text-align: left;
+      padding: 0.6rem 1rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .score-table td {
+      font-size: 0.9rem; font-weight: 600;
+      padding: 0.7rem 1rem;
+      border-bottom: 1px solid rgba(0,245,255,0.05);
+      color: var(--text);
+    }
+    .score-table tr:first-child td { color: var(--gold); }
+    .score-table tr:nth-child(2) td { color: #c0c0c0; }
+    .rank { font-family: 'Orbitron', sans-serif; font-size: 0.7rem; }
+
+    /* ─── FOOTER ─────────────────────────────────────────── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 2.5rem 0;
+      display: flex; justify-content: space-between; align-items: center;
+      flex-wrap: wrap; gap: 1rem;
+    }
+    .footer-brand {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 0.6rem; color: var(--cyan);
+      text-shadow: var(--glow-c);
+    }
+    .footer-links { display: flex; gap: 1.5rem; }
+    .footer-links a {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.6rem; letter-spacing: 0.15em;
+      color: var(--dim); text-decoration: none;
+      transition: color 0.25s;
+    }
+    .footer-links a:hover { color: var(--cyan); }
+    .footer-copy {
+      font-size: 0.75rem; color: var(--dim); font-weight: 300;
+    }
+
+    /* ─── KEYFRAMES ──────────────────────────────────────── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes expand {
+      from { width: 0; opacity: 0; }
+      to   { width: 120px; opacity: 1; }
+    }
+    @keyframes pulse-glow {
+      0%, 100% { text-shadow: var(--glow-c); }
+      50%       { text-shadow: 0 0 40px rgba(0,245,255,1), 0 0 80px rgba(0,245,255,0.4); }
+    }
+    @keyframes scanH {
+      from { transform: translateX(-100%); }
+      to   { transform: translateX(200%); }
+    }
+
+    /* ─── SCAN BEAM EFFECT ───────────────────────────────── */
+    .scan-beam {
+      position: fixed; top: 0; left: 0;
+      width: 2px; height: 100vh;
+      background: linear-gradient(transparent, var(--cyan), transparent);
+      opacity: 0.07;
+      animation: scanH 8s linear infinite;
+      pointer-events: none; z-index: 3;
+    }
+
+    /* ─── RESPONSIVE ─────────────────────────────────────── */
+    @media (max-width: 600px) {
+      .stats { gap: 1.5rem; }
+      h1 { font-size: 1.2rem; }
+      .game-grid { grid-template-columns: 1fr 1fr; gap: 1rem; }
+      .card-icon { font-size: 2rem; padding: 1.2rem 1rem 0.5rem; }
+      .card-body { padding: 0 1rem 1rem; }
+      .play-btn  { opacity: 1; transform: none; }
+      footer { flex-direction: column; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="starfield"></canvas>
+<div class="scan-beam"></div>
+
+<!-- ── HEADER ─────────────────────────────────────────────── -->
+<header>
+  <div class="wrap">
+    <a href="../index.html" class="back-link">← DJLexFolio</a>
+    <p class="tagline">DJLexFolio × Creative Coding</p>
+    <h1>DJ's <span>Games</span> Hub</h1>
+    <p class="hero-sub">2-Player · Local Multiplayer · AI Opponents · Tournaments</p>
+    <div class="hero-bar"></div>
+  </div>
+</header>
+
+<!-- ── STATS ──────────────────────────────────────────────── -->
+<div class="wrap">
+  <div class="stats">
+    <div class="stat"><div class="stat-num" id="counter-games">11</div><div class="stat-label">Games</div></div>
+    <div class="stat"><div class="stat-num">3</div><div class="stat-label">AI Opponents</div></div>
+    <div class="stat"><div class="stat-num">∞</div><div class="stat-label">Rematches</div></div>
+    <div class="stat"><div class="stat-num" id="counter-score">0</div><div class="stat-label">Total Plays</div></div>
+  </div>
+</div>
+
+<!-- ── GAME GRID ───────────────────────────────────────────── -->
+<div class="wrap">
+  <div class="section-head">
+    <h2>// Select Game</h2>
+    <div class="section-line"></div>
+  </div>
+
+  <!-- FILTER BAR -->
+  <div class="filter-bar">
+    <button class="filter-btn active" data-filter="all">All</button>
+    <button class="filter-btn" data-filter="live">Live Now</button>
+    <button class="filter-btn" data-filter="ai">Has AI</button>
+    <button class="filter-btn" data-filter="realtime">Real-time</button>
+    <button class="filter-btn" data-filter="turn">Turn-based</button>
+  </div>
+
+  <div class="game-grid" id="gameGrid">
+
+    <!-- 1. TIC TAC TOE -->
+    <a class="game-card" href="games/tictactoe.html"
+       data-tags="live ai turn">
+      <div class="card-accent"></div>
+      <div class="card-glow"></div>
+      <span class="card-status status-live">● LIVE</span>
+      <div class="card-icon">⭕</div>
+      <div class="card-body">
+        <div class="card-name">Tic Tac Toe</div>
+        <div class="card-desc">Classic 3×3 grid. Beat the Minimax AI or challenge a friend locally.</div>
+        <div class="card-badges">
+          <span class="badge badge-2p">2 Player</span>
+          <span class="badge badge-ai">AI Mode</span>
+          <span class="badge badge-turn">Turn-based</span>
+        </div>
+        <span class="play-btn">Play Now →</span>
+      </div>
+    </a>
+
+    <!-- 2. PING PONG -->
+    <a class="game-card" href="games/pingpong.html"
+       data-tags="live ai realtime">
+      <div class="card-accent"></div>
+      <div class="card-glow"></div>
+      <span class="card-status status-live">● LIVE</span>
+      <div class="card-icon">🏓</div>
+      <div class="card-body">
+        <div class="card-name">Ping Pong</div>
+        <div class="card-desc">Fast-paced canvas pong. Two players on one keyboard or solo vs AI.</div>
+        <div class="card-badges">
+          <span class="badge badge-2p">2 Player</span>
+          <span class="badge badge-ai">AI Mode</span>
+          <span class="badge badge-rt">Real-time</span>
+        </div>
+        <span class="play-btn">Play Now →</span>
+      </div>
+    </a>
+
+    <!-- 3. CHESS -->
+    <a class="game-card" href="games/chess.html"
+       data-tags="live ai turn">
+      <div class="card-accent"></div>
+      <div class="card-glow"></div>
+      <span class="card-status status-live">● LIVE</span>
+      <div class="card-icon">♟️</div>
+      <div class="card-body">
+        <div class="card-name">Chess</div>
+        <div class="card-desc">Full rules chess. Pass-and-play locally or challenge the AI engine.</div>
+        <div class="card-badges">
+          <span class="badge badge-2p">2 Player</span>
+          <span class="badge badge-ai">AI Mode</span>
+          <span class="badge badge-turn">Turn-based</span>
+        </div>
+        <span class="play-btn">Play Now →</span>
+      </div>
+    </a>
+
+    <!-- 4. AIR HOCKEY -->
+    <a class="game-card" href="games/airhockey.html"
+       data-tags="soon realtime">
+      <div class="card-accent"></div>
+      <div class="card-glow"></div>
+      <span class="card-status status-soon">⧖ SOON</span>
+      <div class="card-icon">🏒</div>
+      <div class="card-body">
+        <div class="card-name">Air Hockey</div>
+        <div class="card-desc">Frictionless puck physics. Two players, one table, pure reflexes.</div>
+        <div class="card-badges">
+          <span class="badge badge-2p">2 Player</span>
+          <span class="badge badge-rt">Real-time</span>
+        </div>
+        <span class="play-btn">Coming Soon</span>
+      </div>
+    </a>
+
+    <!-- 5. SNAKES -->
+    <a class="game-card" href="games/snakes.html"
+       data-tags="soon realtime">
+      <div class="card-accent"></div>
+      <div class="card-glow"></div>
+      <span class="card-status status-soon">⧖ SOON</span>
+      <div class="card-icon">🐍</div>
+      <div class="card-body">
+        <div class="card-name">Snakes</div>
+        <div class="card-desc">Two snakes, one grid. Grow fast, trap your opponent, survive last.</div>
+        <div class="card-badges">
+          <span class="badge badge-2p">2 Player</span>
+          <span class="badge badge-rt">Real-time</span>
+        </div>
+        <span class="play-btn">Coming Soon</span>
+      </div>
+    </a>
+
+    <!-- 6. POOL -->
+    <a class="game-card" href="games/pool.html"
+       data-tags="soon turn">
+      <div class="card-accent"></div>
+      <div class="card-glow"></div>
+      <span class="card-status status-soon">⧖ SOON</span>
+      <div class="card-icon">🎱</div>
+      <div class="card-body">
+        <div class="card-name">Pool</div>
+        <div class="card-desc">8-ball billiards with realistic ball physics and power control.</div>
+        <div class="card-badges">
+          <span class="badge badge-2p">2 Player</span>
+          <span class="badge badge-turn">Turn-based</span>
+        </div>
+        <span class="play-btn">Coming Soon</span>
+      </div>
+    </a>
+
+    <!-- 7. PENALTY KICKS -->
+    <a class="game-card" href="games/penalty.html"
+       data-tags="soon turn">
+      <div class="card-accent"></div>
+      <div class="card-glow"></div>
+      <span class="card-status status-soon">⧖ SOON</span>
+      <div class="card-icon">⚽</div>
+      <div class="card-body">
+        <div class="card-name">Penalty Kicks</div>
+        <div class="card-desc">Aim, power, shoot. Alternate kicks until someone wins the shootout.</div>
+        <div class="card-badges">
+          <span class="badge badge-2p">2 Player</span>
+          <span class="badge badge-turn">Turn-based</span>
+        </div>
+        <span class="play-btn">Coming Soon</span>
+      </div>
+    </a>
+
+    <!-- 8. SUMO -->
+    <a class="game-card" href="games/sumo.html"
+       data-tags="soon realtime">
+      <div class="card-accent"></div>
+      <div class="card-glow"></div>
+      <span class="card-status status-soon">⧖ SOON</span>
+      <div class="card-icon">🤼</div>
+      <div class="card-body">
+        <div class="card-name">Sumo</div>
+        <div class="card-desc">Push your opponent out of the ring. Physics-based showdown.</div>
+        <div class="card-badges">
+          <span class="badge badge-2p">2 Player</span>
+          <span class="badge badge-rt">Real-time</span>
+        </div>
+        <span class="play-btn">Coming Soon</span>
+      </div>
+    </a>
+
+    <!-- 9. MINIGOLF -->
+    <a class="game-card" href="games/minigolf.html"
+       data-tags="soon turn">
+      <div class="card-accent"></div>
+      <div class="card-glow"></div>
+      <span class="card-status status-soon">⧖ SOON</span>
+      <div class="card-icon">⛳</div>
+      <div class="card-body">
+        <div class="card-name">Minigolf</div>
+        <div class="card-desc">Procedural holes, drag-to-aim mechanics. Fewest strokes wins.</div>
+        <div class="card-badges">
+          <span class="badge badge-2p">2 Player</span>
+          <span class="badge badge-turn">Turn-based</span>
+        </div>
+        <span class="play-btn">Coming Soon</span>
+      </div>
+    </a>
+
+    <!-- 10. RACING -->
+    <a class="game-card" href="games/racing.html"
+       data-tags="soon realtime">
+      <div class="card-accent"></div>
+      <div class="card-glow"></div>
+      <span class="card-status status-soon">⧖ SOON</span>
+      <div class="card-icon">🏎️</div>
+      <div class="card-body">
+        <div class="card-name">Racing</div>
+        <div class="card-desc">Top-down track racing. Split keyboard controls, 3 laps to glory.</div>
+        <div class="card-badges">
+          <span class="badge badge-2p">2 Player</span>
+          <span class="badge badge-rt">Real-time</span>
+        </div>
+        <span class="play-btn">Coming Soon</span>
+      </div>
+    </a>
+
+    <!-- 11. SWORD DUELS -->
+    <a class="game-card" href="games/sword.html"
+       data-tags="soon realtime">
+      <div class="card-accent"></div>
+      <div class="card-glow"></div>
+      <span class="card-status status-soon">⧖ SOON</span>
+      <div class="card-icon">⚔️</div>
+      <div class="card-body">
+        <div class="card-name">Sword Duels</div>
+        <div class="card-desc">Side-scrolling blade combat. Attack, parry, and outlast your rival.</div>
+        <div class="card-badges">
+          <span class="badge badge-2p">2 Player</span>
+          <span class="badge badge-rt">Real-time</span>
+          <span class="badge badge-new">New</span>
+        </div>
+        <span class="play-btn">Coming Soon</span>
+      </div>
+    </a>
+
+  </div><!-- /game-grid -->
+
+  <!-- ── TOURNAMENT SECTION ─────────────────────────────── -->
+  <div class="section-head">
+    <h2>// Tournament Mode</h2>
+    <div class="section-line"></div>
+  </div>
+  <div class="tournament-panel">
+    <h3>🏆 Run a Mini-Tournament</h3>
+    <p>Challenge a friend across multiple games. The hub tracks your wins and crowns the overall champion after all rounds are played.</p>
+    <div class="t-games">
+      <span class="t-game-chip">Tic Tac Toe</span>
+      <span class="t-game-chip">Ping Pong</span>
+      <span class="t-game-chip">Chess</span>
+    </div>
+    <button class="launch-tourney" onclick="alert('Tournament mode — connect backend API first!')">
+      Launch Tournament →
+    </button>
+  </div>
+
+  <!-- ── LEADERBOARD ─────────────────────────────────────── -->
+  <div class="section-head">
+    <h2>// Hall of Fame</h2>
+    <div class="section-line"></div>
+  </div>
+  <div class="score-panel">
+    <h3>// Global Leaderboard</h3>
+    <table class="score-table">
+      <thead>
+        <tr>
+          <th>#</th><th>Player</th><th>Wins</th><th>Favourite Game</th><th>Win Rate</th>
+        </tr>
+      </thead>
+      <tbody id="leaderboard">
+        <tr><td class="rank">01</td><td>DJ</td><td>—</td><td>Chess</td><td>—</td></tr>
+        <tr><td class="rank">02</td><td>Player 2</td><td>—</td><td>—</td><td>—</td></tr>
+        <tr><td class="rank">03</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+</div><!-- /wrap -->
+
+<!-- ── FOOTER ─────────────────────────────────────────────── -->
+<footer>
+  <div class="wrap" style="width:100%;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;">
+    <div class="footer-brand">DJ's Games Hub</div>
+    <nav class="footer-links">
+      <a href="../index.html">Portfolio</a>
+      <a href="../research.html">Research</a>
+      <a href="https://github.com" target="_blank">GitHub</a>
+    </nav>
+    <p class="footer-copy">Built by DJ · Part of DJLexFolio</p>
+  </div>
+</footer>
+
+<script>
+/* ── STARFIELD ─────────────────────────────────────────────── */
+(function() {
+  const c = document.getElementById('starfield');
+  const ctx = c.getContext('2d');
+  let stars = [];
+  function resize() {
+    c.width = window.innerWidth;
+    c.height = window.innerHeight;
+  }
+  function init() {
+    stars = Array.from({length: 140}, () => ({
+      x: Math.random() * c.width,
+      y: Math.random() * c.height,
+      r: Math.random() * 1.4 + 0.2,
+      a: Math.random(),
+      s: Math.random() * 0.003 + 0.001,
+      d: Math.random() > 0.5 ? 1 : -1
+    }));
+  }
+  function draw() {
+    ctx.clearRect(0, 0, c.width, c.height);
+    stars.forEach(s => {
+      s.a += s.s * s.d;
+      if (s.a > 1 || s.a < 0) s.d *= -1;
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(0,245,255,${s.a * 0.7})`;
+      ctx.fill();
+    });
+    requestAnimationFrame(draw);
+  }
+  window.addEventListener('resize', () => { resize(); init(); });
+  resize(); init(); draw();
+})();
+
+/* ── FILTER BAR ────────────────────────────────────────────── */
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    this.classList.add('active');
+    const filter = this.dataset.filter;
+    document.querySelectorAll('.game-card').forEach(card => {
+      const tags = card.dataset.tags || '';
+      const show = filter === 'all' || tags.includes(filter);
+      card.style.display = show ? 'block' : 'none';
+    });
+  });
+});
+
+/* ── PLAY COUNT from localStorage ──────────────────────────── */
+const plays = parseInt(localStorage.getItem('djhub_totalplays') || '0');
+document.getElementById('counter-score').textContent = plays;
+
+/* ── CARD CLICK SOUND (visual feedback) ────────────────────── */
+document.querySelectorAll('.game-card').forEach(card => {
+  card.addEventListener('mouseenter', function() {
+    this.style.borderColor = 'rgba(0,245,255,0.5)';
+  });
+  card.addEventListener('mouseleave', function() {
+    this.style.borderColor = 'var(--border)';
+  });
+});
+</script>
+</body>
+</html>
